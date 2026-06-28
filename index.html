@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SY27 Schedule | Multi-POV View</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: #F5F6F8;
+    color: #1F2937;
+    line-height: 1.4;
+  }
+  header {
+    background: #1F3864;
+    color: white;
+    padding: 1.25rem 1.5rem;
+  }
+  header h1 { margin: 0; font-size: 1.5rem; }
+  header p { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .pov-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .pov-btn {
+    padding: 0.75rem 1.25rem;
+    border: 2px solid #1F3864;
+    background: white;
+    color: #1F3864;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    min-width: 120px;
+  }
+  .pov-btn:hover { background: #E5E9F2; }
+  .pov-btn.active { background: #1F3864; color: white; }
+  .pov-btn .sub {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-top: 0.1rem;
+  }
+  .summary {
+    background: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #1F3864;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .summary h2 { margin: 0 0 0.5rem; font-size: 1.1rem; color: #1F3864; }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .stat { background: #F5F6F8; padding: 0.6rem 0.85rem; border-radius: 5px; }
+  .stat .num { font-size: 1.5rem; font-weight: 700; color: #1F3864; line-height: 1; }
+  .stat .lbl { font-size: 0.78rem; color: #6B7280; margin-top: 0.2rem; }
+  .legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+  .quarter {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .quarter-header {
+    background: #595959;
+    color: white;
+    padding: 0.85rem 1.25rem;
+    font-weight: 600;
+  }
+  .week-row {
+    display: grid;
+    grid-template-columns: 110px repeat(5, 1fr) 120px;
+    gap: 4px;
+    padding: 4px;
+    border-bottom: 1px solid #F0F1F4;
+  }
+  .week-row:last-child { border-bottom: none; }
+  .week-row.header {
+    background: #F5F6F8;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: #6B7280;
+    text-align: center;
+    padding: 0.5rem 4px;
+  }
+  .week-row.header > div { padding: 0.25rem 0; }
+  .week-label {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4B5563;
+    display: flex;
+    align-items: center;
+  }
+  .day {
+    padding: 0.6rem 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    font-size: 0.82rem;
+    text-align: center;
+    border: 1px solid transparent;
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .day:hover { transform: scale(1.03); border-color: #1F3864; }
+  .day .date { font-weight: 600; font-size: 0.78rem; }
+  .day .lbl { font-size: 0.68rem; opacity: 0.85; margin-top: 0.15rem; }
+  .day.on-full { background: #C6EFCE; }
+  .day.on-half { background: #FFE699; }
+  .day.off-pd { background: #FCB98F; }
+  .day.off-pd .lbl { font-weight: 600; }
+  .day.closed { background: #D9D9D9; color: #6B7280; }
+  .week-count {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.78rem;
+    color: #4B5563;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F5F6F8;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(31, 56, 100, 0.4);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    max-width: 520px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h3 { margin: 0 0 0.5rem; color: #1F3864; }
+  .modal .pov-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #F0F1F4;
+    font-size: 0.92rem;
+  }
+  .modal .pov-row:last-child { border-bottom: none; }
+  .modal-close {
+    margin-top: 1rem;
+    padding: 0.6rem 1.25rem;
+    background: #1F3864;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  .footer-note {
+    background: #FFF8E1;
+    border-left: 4px solid #DD9933;
+    padding: 1rem 1.25rem;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    color: #4B5563;
+    margin-top: 1rem;
+  }
+  .footer-note strong { color: #1F3864; }
+  .footer-note ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SY27 School Calendar &mdash; Multi-Role View</h1>
+  <p>Switch between roles to see who's on campus each day. Use Per-AP to view one person. Full-weeks-on-campus summary at the top.</p>
+</header>
+
+<div class="container">
+
+  <div class="pov-bar">
+    <button class="pov-btn active" data-pov="student">Student</button>
+    <button class="pov-btn" data-pov="staff">Staff</button>
+    <button class="pov-btn" data-pov="api">API</button>
+    <button class="pov-btn" data-pov="apc">APC</button>
+    <button class="pov-btn" data-pov="aps">APS</button>
+    <button class="pov-btn" data-pov="dso">DCO</button>
+    <button class="pov-btn" data-pov="principal">Principal</button>
+    <button class="pov-btn" data-pov="perap">Per TRUTH Teammate<span class="sub">pick a person</span></button>
+  </div>
+
+  <div id="ap-picker" style="display:none;margin-bottom:1rem;">
+    <label style="font-size:0.85rem;font-weight:600;color:#1F3864;margin-right:0.5rem;">Choose a TRUTH teammate:</label>
+    <select id="ap-select" style="padding:0.5rem 0.75rem;border:2px solid #1F3864;border-radius:6px;font-size:0.95rem;font-weight:600;color:#1F3864;background:white;"></select>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="swatch" style="background:#C6EFCE"></div>On campus, full day</div>
+    <div class="legend-item"><div class="swatch" style="background:#FFE699"></div>On campus, half day</div>
+    <div class="legend-item"><div class="swatch" style="background:#FCB98F"></div>Off campus (PD)</div>
+    <div class="legend-item"><div class="swatch" style="background:#D9D9D9"></div>Closed / no school</div>
+  </div>
+
+  <div id="calendar"></div>
+
+  <div class="footer-note">
+    <strong>Assumptions used:</strong>
+    <ul>
+      <li>Cohort PDs are off-site. API Cohort (4 dates) takes APIs + APS off together. APC Cohort (4 dates) takes APCs off. APS Cohort (7 dates) takes only APS off.</li>
+      <li>Wednesdays = half day for students, full day for staff/AP/Principal.</li>
+      <li>Wellness Wednesdays (9 dates) = half day for everyone, all adults included: 9/23, 10/21, 11/11, 12/9, 1/13, 2/10, 3/17, 4/7, 5/19.</li>
+      <li>PD Days = students off, all adults at PD on campus.</li>
+      <li>Several dates have OVERLAPPING off-site PDs (e.g., 3/25 = SL PD + APC Cohort + APS Cohort = three different groups out at once). Modal shows all events.</li>
+      <li><strong>DCO:</strong> off-campus for DCO Summit: 10/27&ndash;28, 3/9&ndash;10, and 5/25&ndash;26.</li>
+      <li><strong>Per TRUTH Teammate view:</strong> pick any individual teammate to see their personal on/off-campus year.</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <p id="modal-event" style="color:#6B7280;font-size:0.9rem;margin:0 0 0.75rem;"></p>
+    <div class="pov-row"><span>Student:</span> <strong id="modal-student"></strong></div>
+    <div class="pov-row"><span>Staff:</span> <strong id="modal-staff"></strong></div>
+    <div class="pov-row"><span>API:</span> <strong id="modal-api"></strong></div>
+    <div class="pov-row"><span>APC:</span> <strong id="modal-apc"></strong></div>
+    <div class="pov-row"><span>APS (De'Ron):</span> <strong id="modal-aps"></strong></div>
+    <div class="pov-row"><span>Principal (you):</span> <strong id="modal-principal"></strong></div>
+    <div class="pov-row"><span>DCO:</span> <strong id="modal-dso"></strong></div>
+    <button class="modal-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+const CLOSED_DATES = {
+  '2026-09-07': 'Labor Day',
+  '2026-10-12': 'Columbus Day',
+  '2026-11-06': 'No School',
+  '2026-11-25': 'Thanksgiving Break',
+  '2026-11-26': 'Thanksgiving',
+  '2026-11-27': 'Thanksgiving Break',
+  '2026-12-23': 'Winter Break',
+  '2026-12-24': 'Winter Break',
+  '2026-12-25': 'Christmas',
+  '2026-12-28': 'Winter Break',
+  '2026-12-29': 'Winter Break',
+  '2026-12-30': 'Winter Break',
+  '2026-12-31': 'Winter Break',
+  '2027-01-01': "New Year's Day",
+  '2027-01-18': 'MLK Day',
+  '2027-02-15': 'Mid-Winter Break',
+  '2027-02-16': 'Mid-Winter Break',
+  '2027-02-17': 'Mid-Winter Break',
+  '2027-02-18': 'Mid-Winter Break',
+  '2027-02-19': 'Mid-Winter Break',
+  '2027-03-29': 'Spring Break',
+  '2027-03-30': 'Spring Break',
+  '2027-03-31': 'Spring Break',
+  '2027-04-01': 'Spring Break',
+  '2027-04-02': 'Spring Break',
+  '2027-05-31': 'Memorial Day',
+  '2027-06-18': 'End of Year',
+};
+
+const PD_DAYS = {
+  '2026-09-25': 'PD Day',
+  '2026-11-05': 'PD Day',
+  '2027-01-04': 'PD Day',
+  '2027-02-01': 'PD Day',
+  '2027-03-19': 'PD Day',
+};
+
+const SL_PD = {
+  '2026-09-17': 'SL PD',
+  '2026-10-22': 'SL PD',
+  '2026-12-03': 'SL PD',
+  '2027-01-21': 'SL PD',
+  '2027-02-26': 'SL PD',
+  '2027-03-24': 'SL PD (1 of 3)',
+  '2027-03-25': 'SL PD (2 of 3)',
+  '2027-03-26': 'SL PD (3 of 3)',
+  '2027-05-07': 'SL PD',
+  '2027-05-27': 'SL PD',
+  '2027-06-10': 'SL PD',
+};
+
+const SL_AP_PD = {
+  '2026-09-24': 'SL/AP PD',
+  '2026-10-29': 'SL/AP PD',
+  '2026-12-10': 'SL/AP PD',
+  '2027-01-28': 'SL/AP PD',
+  '2027-03-05': 'SL/AP PD',
+  '2027-03-11': 'SL/AP PD',
+  '2027-04-08': 'SL/AP PD',
+  '2027-05-20': 'SL/AP PD',
+};
+
+const API_COHORT = {
+  '2026-10-15': 'API Cohort',
+  '2027-01-07': 'API Cohort',
+  '2027-02-11': 'API Cohort',
+  '2027-03-18': 'API Cohort',
+};
+
+const APC_COHORT = {
+  '2026-10-08': 'APC Cohort',
+  '2026-11-12': 'APC Cohort',
+  '2027-02-04': 'APC Cohort',
+  '2027-03-25': 'APC Cohort',
+};
+
+const APS_COHORT = {
+  '2026-09-10': 'APS Cohort',
+  '2026-10-22': 'APS Cohort',
+  '2026-12-03': 'APS Cohort',
+  '2027-01-21': 'APS Cohort',
+  '2027-03-04': 'APS Cohort',
+  '2027-03-25': 'APS Cohort',
+  '2027-04-15': 'APS Cohort',
+};
+
+const HALF_EXTRA = {
+  '2026-11-03': 'Half Day',
+  '2026-11-19': 'Half Day',
+  '2026-12-22': 'Half Day',
+  '2027-02-25': 'Half Day',
+  '2027-04-29': 'Half Day',
+  '2027-06-17': 'Diploma Pick Up (half)',
+};
+
+const GRADUATION = { '2027-06-16': 'Graduation' };
+
+const WELLNESS_WED = {
+  '2026-09-23': 'Wellness Wednesday', '2026-10-21': 'Wellness Wednesday',
+  '2026-11-11': 'Wellness Wednesday', '2026-12-09': 'Wellness Wednesday',
+  '2027-01-13': 'Wellness Wednesday', '2027-02-10': 'Wellness Wednesday',
+  '2027-03-17': 'Wellness Wednesday', '2027-04-07': 'Wellness Wednesday',
+  '2027-05-19': 'Wellness Wednesday',
+};
+
+const DSO_SUMMIT = {
+  '2026-10-27': 'DCO Summit', '2026-10-28': 'DCO Summit',
+  '2027-03-09': 'DCO Summit', '2027-03-10': 'DCO Summit',
+  '2027-05-25': 'DCO Summit', '2027-05-26': 'DCO Summit',
+};
+
+// Individual APs; cat = the POV category that drives their schedule.
+// April Michelle is treated as an API per request.
+const AP_PEOPLE = [
+  {name: 'April Michelle', role: 'API',  cat: 'api'},
+  {name: 'Darlene',        role: 'API',  cat: 'api'},
+  {name: "De'Ron",         role: 'APS',  cat: 'aps'},
+  {name: 'Hannah',         role: 'API',  cat: 'api'},
+  {name: 'Kaila',          role: 'APC',  cat: 'apc'},
+  {name: 'Nicole',         role: 'DCO',  cat: 'dso'},
+  {name: 'Nikki',          role: 'API',  cat: 'api'},
+  {name: 'Olay',           role: 'API',  cat: 'api'},
+  {name: 'Pat',            role: 'APC',  cat: 'apc'},
+  {name: 'Tamar',          role: 'API',  cat: 'api'},
+];
+let currentAp = AP_PEOPLE[0].name;
+
+const QUARTERS = [
+  {name: 'Q1', subtitle: 'Aug 25 - Oct 30', start: '2026-08-24', end: '2026-10-30'},
+  {name: 'Q2', subtitle: 'Nov 2 - Jan 29', start: '2026-11-02', end: '2027-01-29'},
+  {name: 'Q3', subtitle: 'Feb 2 - Apr 16', start: '2027-02-02', end: '2027-04-16'},
+  {name: 'Q4', subtitle: 'Apr 19 - Jun 15', start: '2027-04-19', end: '2027-06-18'},
+];
+
+function effectivePov(pov) {
+  if (pov === 'dso') return 'staff';          // DSO follows the staff/adult calendar
+  if (pov === 'perap') {
+    const person = AP_PEOPLE.find(p => p.name === currentAp);
+    if (!person) return 'api';
+    return person.cat === 'dso' ? 'staff' : person.cat;
+  }
+  return pov;
+}
+
+// True when the active selection represents the DSO, via either the DSO tab or Per-AP.
+function isDsoView(pov) {
+  if (pov === 'dso') return true;
+  if (pov === 'perap') {
+    const person = AP_PEOPLE.find(p => p.name === currentAp);
+    return !!person && person.cat === 'dso';
+  }
+  return false;
+}
+
+function getStatus(dateStr, pov) {
+  const dsoView = isDsoView(pov);
+  pov = effectivePov(pov);
+  const date = new Date(dateStr + 'T00:00:00');
+  const dow = date.getDay();
+
+  if (CLOSED_DATES[dateStr]) return 'closed';
+  if (dsoView && DSO_SUMMIT[dateStr]) return 'off-pd';
+  if (PD_DAYS[dateStr]) {
+    if (pov === 'student') return 'closed';
+    return 'on-full';
+  }
+  if (GRADUATION[dateStr]) {
+    if (pov === 'student') return 'closed';
+    return 'on-full';
+  }
+  if (pov === 'principal' && SL_PD[dateStr]) return 'off-pd';
+  if (SL_AP_PD[dateStr] && ['principal', 'api', 'apc', 'aps'].includes(pov)) return 'off-pd';
+  if ((pov === 'api' || pov === 'aps') && API_COHORT[dateStr]) return 'off-pd';
+  if (pov === 'apc' && APC_COHORT[dateStr]) return 'off-pd';
+  if (pov === 'aps' && APS_COHORT[dateStr]) return 'off-pd';
+  if (HALF_EXTRA[dateStr]) {
+    if (pov === 'student') return 'on-half';
+    return 'on-full';
+  }
+  if (WELLNESS_WED[dateStr]) return 'on-half';
+  if (dow === 3 && pov === 'student') return 'on-half';
+  return 'on-full';
+}
+
+function cellLabelFor(dateStr, pov) {
+  // Students should see a plain "Half Day" on Wellness Wednesdays, not the event name.
+  if (pov === 'student' && WELLNESS_WED[dateStr]) return 'Half Day';
+  return getEventLabel(dateStr) || STATUS_LABEL[getStatus(dateStr, pov)];
+}
+
+function getEventLabel(dateStr) {
+  const parts = [];
+  if (CLOSED_DATES[dateStr]) parts.push(CLOSED_DATES[dateStr]);
+  if (PD_DAYS[dateStr]) parts.push(PD_DAYS[dateStr]);
+  if (SL_PD[dateStr]) parts.push(SL_PD[dateStr]);
+  if (SL_AP_PD[dateStr]) parts.push(SL_AP_PD[dateStr]);
+  if (API_COHORT[dateStr]) parts.push(API_COHORT[dateStr]);
+  if (APC_COHORT[dateStr]) parts.push(APC_COHORT[dateStr]);
+  if (APS_COHORT[dateStr]) parts.push(APS_COHORT[dateStr]);
+  if (HALF_EXTRA[dateStr]) parts.push(HALF_EXTRA[dateStr]);
+  if (GRADUATION[dateStr]) parts.push(GRADUATION[dateStr]);
+  if (DSO_SUMMIT[dateStr]) parts.push(DSO_SUMMIT[dateStr]);
+  if (WELLNESS_WED[dateStr]) parts.push(WELLNESS_WED[dateStr]);
+  return parts.join(' + ');
+}
+
+function fmtDate(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+function dateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+function getMonday(d) {
+  const x = new Date(d);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+function getWeeks(startStr, endStr) {
+  const weeks = [];
+  let monday = getMonday(new Date(startStr + 'T00:00:00'));
+  const end = new Date(endStr + 'T00:00:00');
+  while (monday <= end) {
+    const week = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      week.push(dateStr(d));
+    }
+    weeks.push(week);
+    monday.setDate(monday.getDate() + 7);
+  }
+  return weeks;
+}
+
+function fullWeeksForPov(pov) {
+  // Count complete Mon-Fri in-session weeks where every day is on campus.
+  // Half-days count as on campus; only off-pd or closed breaks a full week.
+  let full = 0, inSession = 0;
+  QUARTERS.forEach(q => {
+    getWeeks(q.start, q.end).forEach(week => {
+      const inQ = week.filter(d => d >= q.start && d <= q.end);
+      if (inQ.length < 5) return;
+      const statuses = inQ.map(d => getStatus(d, pov));
+      if (statuses.some(s => s === 'closed')) return;
+      inSession++;
+      if (statuses.every(s => s === 'on-full' || s === 'on-half')) full++;
+    });
+  });
+  return { full, inSession };
+}
+
+const STATUS_LABEL = {
+  'on-full': 'Full day',
+  'on-half': 'Half day',
+  'off-pd': 'Off campus (PD)',
+  'closed': 'Closed',
+};
+
+const POV_LABEL = {
+  'student': 'Students',
+  'staff': 'Staff',
+  'api': 'APIs',
+  'apc': 'APCs',
+  'aps': 'APS',
+  'principal': 'Principal',
+  'dso': 'DCO',
+  'perap': 'Per TRUTH Teammate'
+};
+
+let currentPov = 'student';
+
+function renderCalendar() {
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  QUARTERS.forEach(q => {
+    const qDiv = document.createElement('div');
+    qDiv.className = 'quarter';
+    qDiv.innerHTML = `<div class="quarter-header">${q.name} &mdash; ${q.subtitle}</div>`;
+    const headerRow = document.createElement('div');
+    headerRow.className = 'week-row header';
+    headerRow.innerHTML = '<div></div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On campus</div>';
+    qDiv.appendChild(headerRow);
+
+    const weeks = getWeeks(q.start, q.end);
+    weeks.forEach(week => {
+      const row = document.createElement('div');
+      row.className = 'week-row';
+      const firstDate = new Date(week[0] + 'T00:00:00');
+      const wl = document.createElement('div');
+      wl.className = 'week-label';
+      wl.textContent = `Wk of ${fmtDate(firstDate)}`;
+      row.appendChild(wl);
+      let onCount = 0, halfCount = 0;
+      week.forEach(d => {
+        const dc = document.createElement('div');
+        const status = getStatus(d, currentPov);
+        dc.className = `day ${status}`;
+        const dt = new Date(d + 'T00:00:00');
+        const cellLabel = cellLabelFor(d, currentPov);
+        dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
+        dc.onclick = () => showModal(d);
+        row.appendChild(dc);
+        if (status === 'on-full') onCount++;
+        else if (status === 'on-half') halfCount++;
+      });
+      const cc = document.createElement('div');
+      cc.className = 'week-count';
+      cc.textContent = `${onCount + halfCount} of 5 ${halfCount ? '(' + halfCount + ' half)' : ''}`;
+      row.appendChild(cc);
+      qDiv.appendChild(row);
+    });
+    cal.appendChild(qDiv);
+  });
+}
+
+function renderSummary() {
+  const s = document.getElementById('summary');
+  let onFull = 0, onHalf = 0, offPd = 0, closed = 0, totalDays = 0;
+  QUARTERS.forEach(q => {
+    const weeks = getWeeks(q.start, q.end);
+    weeks.forEach(week => {
+      week.forEach(d => {
+        const dt = new Date(d + 'T00:00:00');
+        const qs = new Date(q.start + 'T00:00:00');
+        const qe = new Date(q.end + 'T00:00:00');
+        if (dt < qs || dt > qe) return;
+        totalDays++;
+        const st = getStatus(d, currentPov);
+        if (st === 'on-full') onFull++;
+        else if (st === 'on-half') onHalf++;
+        else if (st === 'off-pd') offPd++;
+        else if (st === 'closed') closed++;
+      });
+    });
+  });
+  const onTotal = onFull + onHalf;
+  const onPct = totalDays > 0 ? Math.round(onTotal / totalDays * 100) : 0;
+  const fw = fullWeeksForPov(currentPov);
+
+  let curLabel = POV_LABEL[currentPov];
+  if (currentPov === 'perap') curLabel = currentAp + ' (' + (AP_PEOPLE.find(p=>p.name===currentAp)||{}).role + ')';
+
+  s.innerHTML = `
+    <h2>${curLabel}: ${fw.full} full weeks on campus &middot; ${onTotal} days (${onPct}% of school year)</h2>
+    <div class="summary-grid">
+      <div class="stat"><div class="num">${fw.full}</div><div class="lbl">Full weeks</div></div>
+      <div class="stat"><div class="num">${onFull}</div><div class="lbl">Full days</div></div>
+      <div class="stat"><div class="num">${onHalf}</div><div class="lbl">Half days</div></div>
+      <div class="stat"><div class="num">${offPd}</div><div class="lbl">Off-campus at PD</div></div>
+      <div class="stat"><div class="num">${closed}</div><div class="lbl">Closed / no school</div></div>
+      <div class="stat"><div class="num">${totalDays}</div><div class="lbl">Total weekdays</div></div>
+    </div>
+  `;
+}
+
+function showModal(dStr) {
+  const dt = new Date(dStr + 'T00:00:00');
+  const evtLabel = getEventLabel(dStr);
+  document.getElementById('modal-title').textContent =
+    dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('modal-event').textContent = evtLabel || 'Standard school day';
+  document.getElementById('modal-student').textContent   = STATUS_LABEL[getStatus(dStr, 'student')];
+  document.getElementById('modal-staff').textContent     = STATUS_LABEL[getStatus(dStr, 'staff')];
+  document.getElementById('modal-api').textContent       = STATUS_LABEL[getStatus(dStr, 'api')];
+  document.getElementById('modal-apc').textContent       = STATUS_LABEL[getStatus(dStr, 'apc')];
+  document.getElementById('modal-aps').textContent       = STATUS_LABEL[getStatus(dStr, 'aps')];
+  document.getElementById('modal-principal').textContent = STATUS_LABEL[getStatus(dStr, 'principal')];
+  document.getElementById('modal-dso').textContent       = STATUS_LABEL[getStatus(dStr, 'dso')];
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal-bg').classList.remove('show'); }
+
+document.getElementById('modal-bg').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-bg') closeModal();
+});
+
+// Populate AP dropdown
+const apSelect = document.getElementById('ap-select');
+AP_PEOPLE.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p.name;
+  opt.textContent = `${p.name} — ${p.role}`;
+  apSelect.appendChild(opt);
+});
+apSelect.addEventListener('change', () => {
+  currentAp = apSelect.value;
+  renderSummary();
+  renderCalendar();
+});
+
+document.querySelectorAll('.pov-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pov-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPov = btn.dataset.pov;
+    document.getElementById('ap-picker').style.display = (currentPov === 'perap') ? 'block' : 'none';
+    renderSummary();
+    renderCalendar();
+  });
+});
+
+renderSummary();
+renderCalendar();
+</script>
+
+</body>
+</html>

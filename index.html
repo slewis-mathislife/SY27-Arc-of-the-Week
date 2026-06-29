@@ -84,6 +84,24 @@
     margin-bottom: 1rem;
     flex-wrap: wrap;
   }
+  .pov-intro {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .pov-intro-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1F3864;
+    letter-spacing: 0.3px;
+  }
+  .pov-intro-hint {
+    font-size: 0.82rem;
+    color: #6B7280;
+    font-style: italic;
+  }
   .pov-btn {
     padding: 0.75rem 1.25rem;
     border: 2px solid #1F3864;
@@ -95,9 +113,11 @@
     border-radius: 6px;
     transition: all 0.15s ease;
     min-width: 120px;
+    box-shadow: 0 2px 0 #1F3864;
   }
-  .pov-btn:hover { background: #E5E9F2; }
-  .pov-btn.active { background: #1F3864; color: white; }
+  .pov-btn:hover { background: #E5E9F2; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(31,56,100,0.25); }
+  .pov-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #1F3864; }
+  .pov-btn.active { background: #1F3864; color: white; box-shadow: 0 2px 0 #0d1b33; }
   .pov-btn .sub {
     display: block;
     font-size: 0.72rem;
@@ -206,6 +226,43 @@
     line-height: 1;
     margin-top: 0.1rem;
   }
+  .day.today {
+    outline: 3px solid #1F3864;
+    outline-offset: -1px;
+    position: relative;
+    font-weight: 700;
+  }
+  .day.today::after {
+    content: "TODAY";
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1F3864;
+    color: #fff;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .week-row.current-week {
+    background: #FFF6D6;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #E6C200;
+  }
+  .week-label .this-week-tag {
+    margin-top: 0.3rem;
+    display: inline-block;
+    background: #E6C200;
+    color: #4B3A00;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
   .week-count {
     padding: 0.6rem 0.5rem;
     font-size: 0.78rem;
@@ -266,6 +323,43 @@
     letter-spacing: 0.3px;
   }
   .signature .heart { font-family: -apple-system, sans-serif; font-size: 1.3rem; vertical-align: middle; margin: 0 0.1rem; }
+  .toolbar {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .tool-btn {
+    padding: 0.6rem 1.1rem;
+    border: 2px solid #007BA7;
+    background: white;
+    color: #007BA7;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tool-btn:hover { background: #007BA7; color: white; }
+
+  @media print {
+    @page { size: portrait; margin: 0.5cm; }
+    body { background: white; }
+    .no-print, .pov-bar, #ap-picker, .toolbar { display: none !important; }
+    header { background: #1F3864 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .container { padding: 0.5rem; max-width: 100%; }
+    .quote-top, .quarter-header, .day, .week-count, .week-row.current-week, .day.today::after, .this-week-tag, .signature, .quote-bottom {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .quarter { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; break-inside: avoid; }
+    .quarter-header { page-break-after: avoid; }
+    .week-row { page-break-inside: avoid; break-inside: avoid; }
+    .summary { box-shadow: none; border: 1px solid #ddd; }
+    .day:hover { transform: none; }
+    .quote-top { box-shadow: none; }
+    h1 { font-size: 1.3rem; }
+  }
 </style>
 </head>
 <body>
@@ -283,6 +377,10 @@
 
 <div class="container">
 
+  <div class="pov-intro">
+    <span class="pov-intro-label">View as:</span>
+    <span class="pov-intro-hint">👆🏾 tap a role to see their schedule</span>
+  </div>
   <div class="pov-bar">
     <button class="pov-btn active" data-pov="student">Student</button>
     <button class="pov-btn" data-pov="staff">Staff</button>
@@ -292,6 +390,11 @@
     <button class="pov-btn" data-pov="dso">DCO</button>
     <button class="pov-btn" data-pov="principal">Principal</button>
     <button class="pov-btn" data-pov="perap">Per TRUTH Teammate<span class="sub">pick a person</span></button>
+  </div>
+
+  <div class="toolbar no-print">
+    <button class="tool-btn" onclick="jumpToToday()">📍 Jump to Today</button>
+    <button class="tool-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
   </div>
 
   <div id="ap-picker" style="display:none;margin-bottom:1rem;">
@@ -636,20 +739,23 @@ function renderCalendar() {
     qDiv.appendChild(headerRow);
 
     const weeks = getWeeks(q.start, q.end);
+    const todayISO = dateStr(new Date());
     weeks.forEach(week => {
       const row = document.createElement('div');
       row.className = 'week-row';
+      const isCurrentWeek = week.includes(todayISO);
+      if (isCurrentWeek) row.classList.add('current-week');
       const firstDate = new Date(week[0] + 'T00:00:00');
       const wl = document.createElement('div');
       wl.className = 'week-label';
-      wl.innerHTML = `<div><strong>Week ${weekNumberFor(week[0])}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;line-height:1.25;">Wk of<br>${fmtDate(firstDate)}</div>`;
+      wl.innerHTML = `<div><strong>Week ${weekNumberFor(week[0])}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;line-height:1.25;">Wk of<br>${fmtDate(firstDate)}</div>${isCurrentWeek ? '<div class="this-week-tag">THIS WEEK</div>' : ''}`;
       row.appendChild(wl);
       let onCount = 0, halfCount = 0;
       week.forEach(d => {
         const dc = document.createElement('div');
         const status = getStatus(d, currentPov);
         const isSlc = !!SLC[d];
-        dc.className = `day ${status}${isSlc ? ' slc' : ''}`;
+        dc.className = `day ${status}${isSlc ? ' slc' : ''}${d === todayISO ? ' today' : ''}`;
         const dt = new Date(d + 'T00:00:00');
         if (isSlc) {
           dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">Half day</div>`;
@@ -664,12 +770,21 @@ function renderCalendar() {
       });
       const cc = document.createElement('div');
       cc.className = 'week-count';
-      cc.textContent = `${onCount + halfCount} of 5 ${(halfCount && currentPov !== 'student') ? '(' + halfCount + ' half)' : ''}`;
+      cc.textContent = `${onCount + halfCount} of 5`;
       row.appendChild(cc);
       qDiv.appendChild(row);
     });
     cal.appendChild(qDiv);
   });
+}
+
+function jumpToToday() {
+  const el = document.querySelector('.week-row.current-week') || document.querySelector('.day.today');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    alert('Today falls outside the school year shown (Aug 2026 – Jun 2027).');
+  }
 }
 
 function renderSummary() {

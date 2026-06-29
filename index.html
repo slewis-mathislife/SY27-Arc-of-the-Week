@@ -19,9 +19,29 @@
     background: #1F3864;
     color: white;
     padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
   header h1 { margin: 0; font-size: 1.5rem; }
   header p { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+  .header-tools {
+    display: flex;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+  .header-tools .tool-btn {
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+  .header-tools .tool-btn:hover {
+    background: #fff;
+    color: #1F3864;
+    border-color: #fff;
+  }
   .quote-top {
     position: relative;
     max-width: 760px;
@@ -167,6 +187,9 @@
     font-weight: 600;
   }
   .quarter-header .emoji { font-size: 1.2rem; }
+  .summer-header {
+    background: linear-gradient(135deg, #F5A623 0%, #E8871E 100%) !important;
+  }
   .week-row {
     display: grid;
     grid-template-columns: 110px repeat(5, 1fr) 120px;
@@ -214,6 +237,8 @@
   .day.off-pd { background: #FCB98F; }
   .day.off-pd .lbl { font-weight: 600; }
   .day.closed { background: #D9D9D9; color: #6B7280; }
+  .day.summer { background: #FBFBF8; color: #C4C4BD; }
+  .day.summer .lbl { color: #C4C4BD; }
   .day.slc {
     border: 3px solid #00B0FF;
     box-shadow: 0 0 0 1px #00B0FF inset;
@@ -345,7 +370,7 @@
   @media print {
     @page { size: portrait; margin: 0.5cm; }
     body { background: white; }
-    .no-print, .pov-bar, #ap-picker, .toolbar { display: none !important; }
+    .no-print, .pov-bar, #ap-picker, .pov-intro, .header-tools { display: none !important; }
     header { background: #1F3864 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .container { padding: 0.5rem; max-width: 100%; }
     .quote-top, .quarter-header, .day, .week-count, .week-row.current-week, .day.today::after, .this-week-tag, .signature, .quote-bottom {
@@ -365,8 +390,14 @@
 <body>
 
 <header>
-  <h1>SY27 School Calendar &mdash; Multi-Role View</h1>
-  <p>Switch between roles to see who's on campus each day. Use Per TRUTH Teammate to view one person.</p>
+  <div class="header-text">
+    <h1>SY27 School Calendar &mdash; Multi-Role View</h1>
+    <p>Switch between roles to see who's on campus each day. Use Per TRUTH Teammate to view one person.</p>
+  </div>
+  <div class="header-tools no-print">
+    <button class="tool-btn" onclick="jumpToToday()">📍 Jump to Today</button>
+    <button class="tool-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
 </header>
 
 <div class="quote-top">
@@ -379,7 +410,7 @@
 
   <div class="pov-intro">
     <span class="pov-intro-label">View as:</span>
-    <span class="pov-intro-hint">👆🏾 tap a role to see their schedule</span>
+    <span class="pov-intro-hint">👇🏾 tap a role to see their schedule</span>
   </div>
   <div class="pov-bar">
     <button class="pov-btn active" data-pov="student">Student</button>
@@ -390,11 +421,6 @@
     <button class="pov-btn" data-pov="dso">DCO</button>
     <button class="pov-btn" data-pov="principal">Principal</button>
     <button class="pov-btn" data-pov="perap">Per TRUTH Teammate<span class="sub">pick a person</span></button>
-  </div>
-
-  <div class="toolbar no-print">
-    <button class="tool-btn" onclick="jumpToToday()">📍 Jump to Today</button>
-    <button class="tool-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
   </div>
 
   <div id="ap-picker" style="display:none;margin-bottom:1rem;">
@@ -533,6 +559,47 @@ const HALF_EXTRA = {
 
 const GRADUATION = { '2027-06-16': 'Graduation' };
 
+// ===== SUMMER / PRE-SEASON =====
+// Each entry: label + which role categories are ON that day. Anyone not listed is "not back yet" (summer).
+// Role categories used: staff, api, apc, aps, principal, dso. Students only return 8/24.
+const LEADERSHIP = ['api', 'apc', 'aps', 'principal', 'dso'];      // all APs + DCO + Principal
+const ALL_ADULTS = ['staff', 'api', 'apc', 'aps', 'principal', 'dso'];
+const SUMMER_EVENTS = {
+  // Leader Summit — off-campus PD for APs, DCO, Principal
+  '2026-06-22': { label: 'Leader Summit', roles: LEADERSHIP, offsite: true },
+  '2026-06-23': { label: 'Leader Summit', roles: LEADERSHIP, offsite: true },
+  '2026-06-24': { label: 'Leader Summit', roles: LEADERSHIP, offsite: true },
+  // Team Planning — APs, DCO, Principal
+  '2026-06-30': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-07-01': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-07-02': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-07-07': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-07-14': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-07-29': { label: 'Team Planning', roles: LEADERSHIP },
+  '2026-08-07': { label: 'Team Planning', roles: LEADERSHIP },
+  // Resilience Day — onsite, APs, DCO, Principal
+  '2026-07-30': { label: 'Resilience Day', roles: LEADERSHIP },
+  // SPA Rehearsals — APs, DCO, Principal
+  '2026-07-28': { label: 'SPA Rehearsal', roles: LEADERSHIP },
+  '2026-08-04': { label: 'SPA Rehearsal', roles: LEADERSHIP },
+  // Staff return + opening week
+  '2026-08-10': { label: 'Staff Returns (SPA)', roles: ALL_ADULTS },
+  '2026-08-11': { label: 'Heartbeat Day', roles: ['staff', 'aps', 'dso', 'principal'] },
+  '2026-08-12': { label: 'OTOS', roles: ALL_ADULTS },
+  '2026-08-13': { label: 'SPA', roles: ALL_ADULTS },
+  '2026-08-14': { label: 'SPA', roles: ALL_ADULTS },
+  '2026-08-17': { label: 'SPA', roles: ALL_ADULTS },
+  '2026-08-18': { label: 'SPA', roles: ALL_ADULTS },
+  // 9th Grade Orientation — half days (students of 9th grade + all adults)
+  '2026-08-19': { label: '9th Grade Orientation', roles: ALL_ADULTS, half: true, studentsHalf: true },
+  '2026-08-20': { label: '9th Grade Orientation', roles: ALL_ADULTS, half: true, studentsHalf: true },
+  '2026-08-21': { label: '9th Grade Orientation', roles: ALL_ADULTS, half: true, studentsHalf: true },
+};
+// Summer window: anything from this date up to (not including) the first day of school is "summer mode."
+const SUMMER_START = '2026-06-22';
+const SCHOOL_START = '2026-08-24';
+function isSummer(dateStr) { return dateStr >= SUMMER_START && dateStr < SCHOOL_START; }
+
 const SLC = {
   '2026-11-18': 'SLC', '2026-11-19': 'SLC',
   '2027-02-24': 'SLC', '2027-02-25': 'SLC',
@@ -576,6 +643,14 @@ const QUARTERS = [
   {num: 4, name: 'Q4', subtitle: 'April 19 - June 15', start: '2027-04-19', end: '2027-06-18'},
 ];
 
+// Summer pre-season section (shown above Quarter 1) with custom week names.
+const SUMMER_SECTION = { summer: true, subtitle: 'June 22 - August 21', start: '2026-06-22', end: '2026-08-21' };
+const SUMMER_WEEK_NAMES = {
+  '2026-06-22': 'SUM 1', '2026-06-29': 'SUM 2', '2026-07-06': 'SUM 3',
+  '2026-07-13': 'SUM 4', '2026-07-20': 'SUM 5', '2026-07-27': 'SUM 6',
+  '2026-08-03': 'SUM 7', '2026-08-10': 'Week A', '2026-08-17': 'Week B',
+};
+
 function effectivePov(pov) {
   if (pov === 'dso') return 'staff';          // DSO follows the staff/adult calendar
   if (pov === 'perap') {
@@ -598,9 +673,31 @@ function isDsoView(pov) {
 
 function getStatus(dateStr, pov) {
   const dsoView = isDsoView(pov);
+  const rawPov = pov;
   pov = effectivePov(pov);
   const date = new Date(dateStr + 'T00:00:00');
   const dow = date.getDay();
+
+  // ----- Summer / pre-season mode -----
+  if (isSummer(dateStr)) {
+    // Resolve the role category for summer attendance (DCO must read as 'dso', not 'staff').
+    let role = pov;
+    if (dsoView) role = 'dso';
+    else if (rawPov === 'perap') {
+      const person = AP_PEOPLE.find(p => p.name === currentAp);
+      if (person) role = person.cat;
+    }
+    const evt = SUMMER_EVENTS[dateStr];
+    if (!evt) return 'summer';                 // nothing scheduled = not back yet
+    if (role === 'student') {
+      return evt.studentsHalf ? 'on-half' : 'summer';
+    }
+    if (evt.roles.includes(role)) {
+      if (evt.offsite) return 'off-pd';
+      return evt.half ? 'on-half' : 'on-full';
+    }
+    return 'summer';                           // this role isn't part of that day's event
+  }
 
   if (CLOSED_DATES[dateStr]) return 'closed';
   if (dsoView && DSO_SUMMIT[dateStr]) return 'off-pd';
@@ -628,6 +725,12 @@ function getStatus(dateStr, pov) {
 }
 
 function cellLabelFor(dateStr, pov) {
+  // Summer: only show the event name to roles actually attending; others show their status.
+  if (isSummer(dateStr)) {
+    const st = getStatus(dateStr, pov);
+    if (st === 'summer') return '';                 // not back yet — keep it clean
+    return SUMMER_EVENTS[dateStr] ? SUMMER_EVENTS[dateStr].label : STATUS_LABEL[st];
+  }
   // Students should see a plain "Half Day" on Wellness Wednesdays, not the event name.
   if (pov === 'student' && WELLNESS_WED[dateStr]) return 'Half Day';
   return getEventLabel(dateStr) || STATUS_LABEL[getStatus(dateStr, pov)];
@@ -647,6 +750,7 @@ function getEventLabel(dateStr) {
   if (GRADUATION[dateStr]) parts.push(GRADUATION[dateStr]);
   if (DSO_SUMMIT[dateStr]) parts.push(DSO_SUMMIT[dateStr]);
   if (WELLNESS_WED[dateStr]) parts.push(WELLNESS_WED[dateStr]);
+  if (SUMMER_EVENTS[dateStr]) parts.push(SUMMER_EVENTS[dateStr].label);
   return parts.join(' + ');
 }
 
@@ -711,6 +815,7 @@ const STATUS_LABEL = {
   'on-half': 'Half day',
   'off-pd': 'Off campus (PD)',
   'closed': 'Closed',
+  'summer': 'Summer',
 };
 
 const POV_LABEL = {
@@ -726,9 +831,67 @@ const POV_LABEL = {
 
 let currentPov = 'student';
 
+function renderWeekRow(week, opts) {
+  // opts: { weekLabelHTML, isSummer }
+  const todayISO = dateStr(new Date());
+  const row = document.createElement('div');
+  row.className = 'week-row';
+  const isCurrentWeek = week.includes(todayISO);
+  if (isCurrentWeek) row.classList.add('current-week');
+  const wl = document.createElement('div');
+  wl.className = 'week-label';
+  wl.innerHTML = opts.weekLabelHTML(week, isCurrentWeek);
+  row.appendChild(wl);
+  let onCount = 0, halfCount = 0;
+  week.forEach(d => {
+    const dc = document.createElement('div');
+    const status = getStatus(d, currentPov);
+    const isSlc = !!SLC[d];
+    dc.className = `day ${status}${isSlc ? ' slc' : ''}${d === todayISO ? ' today' : ''}`;
+    const dt = new Date(d + 'T00:00:00');
+    if (isSlc) {
+      dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">Half day</div>`;
+    } else {
+      const cellLabel = cellLabelFor(d, currentPov);
+      dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
+    }
+    dc.onclick = () => showModal(d);
+    row.appendChild(dc);
+    if (status === 'on-full') onCount++;
+    else if (status === 'on-half') halfCount++;
+  });
+  const cc = document.createElement('div');
+  cc.className = 'week-count';
+  cc.textContent = opts.isSummer ? `${onCount + halfCount} on` : `${onCount + halfCount} of 5`;
+  row.appendChild(cc);
+  return row;
+}
+
 function renderCalendar() {
   const cal = document.getElementById('calendar');
   cal.innerHTML = '';
+
+  // ----- Summer section -----
+  const sDiv = document.createElement('div');
+  sDiv.className = 'quarter summer-section';
+  sDiv.innerHTML = `<div class="quarter-header summer-header"><span class="emoji">☀️</span><span class="script">Summer</span> <span>&nbsp;|&nbsp; ${SUMMER_SECTION.subtitle}</span></div>`;
+  const sHeader = document.createElement('div');
+  sHeader.className = 'week-row header';
+  sHeader.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On site</div>';
+  sDiv.appendChild(sHeader);
+  getWeeks(SUMMER_SECTION.start, SUMMER_SECTION.end).forEach(week => {
+    sDiv.appendChild(renderWeekRow(week, {
+      isSummer: true,
+      weekLabelHTML: (wk, cur) => {
+        const name = SUMMER_WEEK_NAMES[wk[0]] || '';
+        const firstDate = new Date(wk[0] + 'T00:00:00');
+        return `<div><strong>${name}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;line-height:1.25;">Wk of<br>${fmtDate(firstDate)}</div>${cur ? '<div class="this-week-tag">THIS WEEK</div>' : ''}`;
+      }
+    }));
+  });
+  cal.appendChild(sDiv);
+
+  // ----- Quarters -----
   QUARTERS.forEach(q => {
     const qDiv = document.createElement('div');
     qDiv.className = 'quarter';
@@ -737,42 +900,14 @@ function renderCalendar() {
     headerRow.className = 'week-row header';
     headerRow.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On campus</div>';
     qDiv.appendChild(headerRow);
-
-    const weeks = getWeeks(q.start, q.end);
-    const todayISO = dateStr(new Date());
-    weeks.forEach(week => {
-      const row = document.createElement('div');
-      row.className = 'week-row';
-      const isCurrentWeek = week.includes(todayISO);
-      if (isCurrentWeek) row.classList.add('current-week');
-      const firstDate = new Date(week[0] + 'T00:00:00');
-      const wl = document.createElement('div');
-      wl.className = 'week-label';
-      wl.innerHTML = `<div><strong>Week ${weekNumberFor(week[0])}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;line-height:1.25;">Wk of<br>${fmtDate(firstDate)}</div>${isCurrentWeek ? '<div class="this-week-tag">THIS WEEK</div>' : ''}`;
-      row.appendChild(wl);
-      let onCount = 0, halfCount = 0;
-      week.forEach(d => {
-        const dc = document.createElement('div');
-        const status = getStatus(d, currentPov);
-        const isSlc = !!SLC[d];
-        dc.className = `day ${status}${isSlc ? ' slc' : ''}${d === todayISO ? ' today' : ''}`;
-        const dt = new Date(d + 'T00:00:00');
-        if (isSlc) {
-          dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">Half day</div>`;
-        } else {
-          const cellLabel = cellLabelFor(d, currentPov);
-          dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
+    getWeeks(q.start, q.end).forEach(week => {
+      qDiv.appendChild(renderWeekRow(week, {
+        isSummer: false,
+        weekLabelHTML: (wk, cur) => {
+          const firstDate = new Date(wk[0] + 'T00:00:00');
+          return `<div><strong>Week ${weekNumberFor(wk[0])}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;line-height:1.25;">Wk of<br>${fmtDate(firstDate)}</div>${cur ? '<div class="this-week-tag">THIS WEEK</div>' : ''}`;
         }
-        dc.onclick = () => showModal(d);
-        row.appendChild(dc);
-        if (status === 'on-full') onCount++;
-        else if (status === 'on-half') halfCount++;
-      });
-      const cc = document.createElement('div');
-      cc.className = 'week-count';
-      cc.textContent = `${onCount + halfCount} of 5`;
-      row.appendChild(cc);
-      qDiv.appendChild(row);
+      }));
     });
     cal.appendChild(qDiv);
   });

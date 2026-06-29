@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>SY27 Schedule | Multi-POV View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -76,11 +79,19 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   .quarter-header {
-    background: #595959;
+    background: #007BA7;
     color: white;
     padding: 0.85rem 1.25rem;
     font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
   }
+  .quarter-header .script {
+    font-weight: 600;
+  }
+  .quarter-header .emoji { font-size: 1.2rem; }
   .week-row {
     display: grid;
     grid-template-columns: 110px repeat(5, 1fr) 120px;
@@ -100,11 +111,12 @@
   .week-row.header > div { padding: 0.25rem 0; }
   .week-label {
     padding: 0.6rem 0.5rem;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #4B5563;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
   }
   .day {
     padding: 0.6rem 0.5rem;
@@ -127,6 +139,18 @@
   .day.off-pd { background: #FCB98F; }
   .day.off-pd .lbl { font-weight: 600; }
   .day.closed { background: #D9D9D9; color: #6B7280; }
+  .day.slc {
+    border: 3px solid #00B0FF;
+    box-shadow: 0 0 0 1px #00B0FF inset;
+  }
+  .day.slc .slc-tag {
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0077C2;
+    line-height: 1;
+    margin-top: 0.1rem;
+  }
   .week-count {
     padding: 0.6rem 0.5rem;
     font-size: 0.78rem;
@@ -177,24 +201,23 @@
     font-size: 0.92rem;
     font-weight: 600;
   }
-  .footer-note {
-    background: #FFF8E1;
-    border-left: 4px solid #DD9933;
-    padding: 1rem 1.25rem;
-    border-radius: 5px;
-    font-size: 0.85rem;
-    color: #4B5563;
-    margin-top: 1rem;
+  .signature {
+    text-align: center;
+    margin: 2.5rem 0 1rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #1F3864;
+    letter-spacing: 0.3px;
   }
-  .footer-note strong { color: #1F3864; }
-  .footer-note ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+  .signature .heart { font-family: -apple-system, sans-serif; font-size: 1.3rem; vertical-align: middle; margin: 0 0.1rem; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>SY27 School Calendar &mdash; Multi-Role View</h1>
-  <p>Switch between roles to see who's on campus each day. Use Per-AP to view one person. Full-weeks-on-campus summary at the top.</p>
+  <p>Switch between roles to see who's on campus each day. Use Per TRUTH Teammate to view one person. Full-weeks-on-campus summary at the top.</p>
 </header>
 
 <div class="container">
@@ -226,18 +249,7 @@
 
   <div id="calendar"></div>
 
-  <div class="footer-note">
-    <strong>Assumptions used:</strong>
-    <ul>
-      <li>Cohort PDs are off-site. API Cohort (4 dates) takes APIs + APS off together. APC Cohort (4 dates) takes APCs off. APS Cohort (7 dates) takes only APS off.</li>
-      <li>Wednesdays = half day for students, full day for staff/AP/Principal.</li>
-      <li>Wellness Wednesdays (9 dates) = half day for everyone, all adults included: 9/23, 10/21, 11/11, 12/9, 1/13, 2/10, 3/17, 4/7, 5/19.</li>
-      <li>PD Days = students off, all adults at PD on campus.</li>
-      <li>Several dates have OVERLAPPING off-site PDs (e.g., 3/25 = SL PD + APC Cohort + APS Cohort = three different groups out at once). Modal shows all events.</li>
-      <li><strong>DCO:</strong> off-campus for DCO Summit: 10/27&ndash;28, 3/9&ndash;10, and 5/25&ndash;26.</li>
-      <li><strong>Per TRUTH Teammate view:</strong> pick any individual teammate to see their personal on/off-campus year.</li>
-    </ul>
-  </div>
+  <div class="signature">created with <span class="heart">💜</span> by Sharmaine Lewis</div>
 
 </div>
 
@@ -249,8 +261,8 @@
     <div class="pov-row"><span>Staff:</span> <strong id="modal-staff"></strong></div>
     <div class="pov-row"><span>API:</span> <strong id="modal-api"></strong></div>
     <div class="pov-row"><span>APC:</span> <strong id="modal-apc"></strong></div>
-    <div class="pov-row"><span>APS (De'Ron):</span> <strong id="modal-aps"></strong></div>
-    <div class="pov-row"><span>Principal (you):</span> <strong id="modal-principal"></strong></div>
+    <div class="pov-row"><span>APS:</span> <strong id="modal-aps"></strong></div>
+    <div class="pov-row"><span>Principal:</span> <strong id="modal-principal"></strong></div>
     <div class="pov-row"><span>DCO:</span> <strong id="modal-dso"></strong></div>
     <button class="modal-close" onclick="closeModal()">Close</button>
   </div>
@@ -355,6 +367,12 @@ const HALF_EXTRA = {
 
 const GRADUATION = { '2027-06-16': 'Graduation' };
 
+const SLC = {
+  '2026-11-18': 'SLC', '2026-11-19': 'SLC',
+  '2027-02-24': 'SLC', '2027-02-25': 'SLC',
+  '2027-04-28': 'SLC', '2027-04-29': 'SLC',
+};
+
 const WELLNESS_WED = {
   '2026-09-23': 'Wellness Wednesday', '2026-10-21': 'Wellness Wednesday',
   '2026-11-11': 'Wellness Wednesday', '2026-12-09': 'Wellness Wednesday',
@@ -386,10 +404,10 @@ const AP_PEOPLE = [
 let currentAp = AP_PEOPLE[0].name;
 
 const QUARTERS = [
-  {name: 'Q1', subtitle: 'Aug 25 - Oct 30', start: '2026-08-24', end: '2026-10-30'},
-  {name: 'Q2', subtitle: 'Nov 2 - Jan 29', start: '2026-11-02', end: '2027-01-29'},
-  {name: 'Q3', subtitle: 'Feb 2 - Apr 16', start: '2027-02-02', end: '2027-04-16'},
-  {name: 'Q4', subtitle: 'Apr 19 - Jun 15', start: '2027-04-19', end: '2027-06-18'},
+  {num: 1, name: 'Q1', subtitle: 'August 25 - October 30', start: '2026-08-24', end: '2026-10-30'},
+  {num: 2, name: 'Q2', subtitle: 'November 2 - January 29', start: '2026-11-02', end: '2027-01-29'},
+  {num: 3, name: 'Q3', subtitle: 'February 2 - April 16', start: '2027-02-02', end: '2027-04-16'},
+  {num: 4, name: 'Q4', subtitle: 'April 19 - June 15', start: '2027-04-19', end: '2027-06-18'},
 ];
 
 function effectivePov(pov) {
@@ -433,6 +451,7 @@ function getStatus(dateStr, pov) {
   if ((pov === 'api' || pov === 'aps') && API_COHORT[dateStr]) return 'off-pd';
   if (pov === 'apc' && APC_COHORT[dateStr]) return 'off-pd';
   if (pov === 'aps' && APS_COHORT[dateStr]) return 'off-pd';
+  if (SLC[dateStr]) return 'on-half';
   if (HALF_EXTRA[dateStr]) {
     if (pov === 'student') return 'on-half';
     return 'on-full';
@@ -457,7 +476,8 @@ function getEventLabel(dateStr) {
   if (API_COHORT[dateStr]) parts.push(API_COHORT[dateStr]);
   if (APC_COHORT[dateStr]) parts.push(APC_COHORT[dateStr]);
   if (APS_COHORT[dateStr]) parts.push(APS_COHORT[dateStr]);
-  if (HALF_EXTRA[dateStr]) parts.push(HALF_EXTRA[dateStr]);
+  if (SLC[dateStr]) parts.push(SLC[dateStr]);
+  if (HALF_EXTRA[dateStr] && !SLC[dateStr]) parts.push(HALF_EXTRA[dateStr]);
   if (GRADUATION[dateStr]) parts.push(GRADUATION[dateStr]);
   if (DSO_SUMMIT[dateStr]) parts.push(DSO_SUMMIT[dateStr]);
   if (WELLNESS_WED[dateStr]) parts.push(WELLNESS_WED[dateStr]);
@@ -478,6 +498,14 @@ function getMonday(d) {
   x.setDate(x.getDate() + diff);
   return x;
 }
+const WEEK1_MONDAY = new Date('2026-08-24T00:00:00');
+function weekNumberFor(dateISO) {
+  // Week of Aug 24, 2026 = Week 1; counts continuously across quarters.
+  const monday = getMonday(new Date(dateISO + 'T00:00:00'));
+  const diffDays = Math.round((monday - WEEK1_MONDAY) / 86400000);
+  return Math.floor(diffDays / 7) + 1;
+}
+
 function getWeeks(startStr, endStr) {
   const weeks = [];
   let monday = getMonday(new Date(startStr + 'T00:00:00'));
@@ -538,10 +566,10 @@ function renderCalendar() {
   QUARTERS.forEach(q => {
     const qDiv = document.createElement('div');
     qDiv.className = 'quarter';
-    qDiv.innerHTML = `<div class="quarter-header">${q.name} &mdash; ${q.subtitle}</div>`;
+    qDiv.innerHTML = `<div class="quarter-header"><span class="emoji">🗓️</span><span class="script">Quarter</span> <span>${q.num} &nbsp;|&nbsp; ${q.subtitle}</span></div>`;
     const headerRow = document.createElement('div');
     headerRow.className = 'week-row header';
-    headerRow.innerHTML = '<div></div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On campus</div>';
+    headerRow.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On campus</div>';
     qDiv.appendChild(headerRow);
 
     const weeks = getWeeks(q.start, q.end);
@@ -551,16 +579,21 @@ function renderCalendar() {
       const firstDate = new Date(week[0] + 'T00:00:00');
       const wl = document.createElement('div');
       wl.className = 'week-label';
-      wl.textContent = `Wk of ${fmtDate(firstDate)}`;
+      wl.innerHTML = `<div><strong>Week ${weekNumberFor(week[0])}</strong></div><div style="font-size:0.72rem;color:#6B7280;font-weight:500;">Wk of ${fmtDate(firstDate)}</div>`;
       row.appendChild(wl);
       let onCount = 0, halfCount = 0;
       week.forEach(d => {
         const dc = document.createElement('div');
         const status = getStatus(d, currentPov);
-        dc.className = `day ${status}`;
+        const isSlc = !!SLC[d];
+        dc.className = `day ${status}${isSlc ? ' slc' : ''}`;
         const dt = new Date(d + 'T00:00:00');
-        const cellLabel = cellLabelFor(d, currentPov);
-        dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
+        if (isSlc) {
+          dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">Half day</div>`;
+        } else {
+          const cellLabel = cellLabelFor(d, currentPov);
+          dc.innerHTML = `<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
+        }
         dc.onclick = () => showModal(d);
         row.appendChild(dc);
         if (status === 'on-full') onCount++;
@@ -568,7 +601,7 @@ function renderCalendar() {
       });
       const cc = document.createElement('div');
       cc.className = 'week-count';
-      cc.textContent = `${onCount + halfCount} of 5 ${halfCount ? '(' + halfCount + ' half)' : ''}`;
+      cc.textContent = `${onCount + halfCount} of 5 ${(halfCount && currentPov !== 'student') ? '(' + halfCount + ' half)' : ''}`;
       row.appendChild(cc);
       qDiv.appendChild(row);
     });

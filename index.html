@@ -622,6 +622,20 @@ const TESTING = {
   '2027-03-03': 'PSAT 8/9 (Gr 9)',
   '2027-03-24': 'PSAT 10 (Gr 10)',
   '2027-04-21': 'SAT Make-ups (Gr 11)',
+  // NJGPA (Gr 11) — March 8-12
+  '2027-03-08': 'NJGPA', '2027-03-09': 'NJGPA', '2027-03-10': 'NJGPA',
+  '2027-03-11': 'NJGPA', '2027-03-12': 'NJGPA',
+  // State Testing — May 10-14
+  '2027-05-10': 'State Testing', '2027-05-11': 'State Testing', '2027-05-12': 'State Testing',
+  '2027-05-13': 'State Testing', '2027-05-14': 'State Testing',
+};
+
+// AP Exams — May 3-14 (separate overlay so it can co-label with State Testing)
+const AP_EXAMS = {
+  '2027-05-03': 'AP Exams', '2027-05-04': 'AP Exams', '2027-05-05': 'AP Exams',
+  '2027-05-06': 'AP Exams', '2027-05-07': 'AP Exams', '2027-05-10': 'AP Exams',
+  '2027-05-11': 'AP Exams', '2027-05-12': 'AP Exams', '2027-05-13': 'AP Exams',
+  '2027-05-14': 'AP Exams',
 };
 
 // ===== RESTRICTED / NON-NEGOTIABLE DAYS =====
@@ -633,7 +647,9 @@ const RESTRICTED_RANGES = [
 function inRange(dateStr, lo, hi) { return dateStr >= lo && dateStr <= hi; }
 function isRestricted(dateStr) {
   if (TESTING[dateStr]) return true;
+  if (AP_EXAMS[dateStr]) return true;
   if (SLC[dateStr]) return true;
+  if (HS_FINALS[dateStr]) return true;
   for (const [lo, hi] of RESTRICTED_RANGES) {
     if (inRange(dateStr, lo, hi)) return true;
   }
@@ -644,6 +660,11 @@ const SLC = {
   '2026-11-18': 'SLC', '2026-11-19': 'SLC',
   '2027-02-24': 'SLC', '2027-02-25': 'SLC',
   '2027-04-28': 'SLC', '2027-04-29': 'SLC',
+};
+
+const HS_FINALS = {
+  '2027-06-08': 'HS Finals', '2027-06-09': 'HS Finals',
+  '2027-06-10': 'HS Finals', '2027-06-11': 'HS Finals',
 };
 
 const WELLNESS_WED = {
@@ -755,6 +776,7 @@ function getStatus(dateStr, pov) {
   if (pov === 'apc' && APC_COHORT[dateStr]) return 'off-pd';
   if (pov === 'aps' && APS_COHORT[dateStr]) return 'off-pd';
   if (SLC[dateStr]) return 'on-half';
+  if (HS_FINALS[dateStr]) return 'on-half';
   if (HALF_EXTRA[dateStr]) {
     if (pov === 'student') return 'on-half';
     return 'on-full';
@@ -792,6 +814,8 @@ function getEventLabel(dateStr) {
   if (WELLNESS_WED[dateStr]) parts.push(WELLNESS_WED[dateStr]);
   if (SUMMER_EVENTS[dateStr]) parts.push(SUMMER_EVENTS[dateStr].label);
   if (TESTING[dateStr]) parts.push(TESTING[dateStr]);
+  if (AP_EXAMS[dateStr]) parts.push(AP_EXAMS[dateStr]);
+  if (HS_FINALS[dateStr]) parts.push(HS_FINALS[dateStr]);
   return parts.join(' + ');
 }
 

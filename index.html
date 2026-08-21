@@ -794,7 +794,8 @@ function cellLabelFor(dateStr, pov) {
   if (isSummer(dateStr)) {
     const st = getStatus(dateStr, pov);
     if (st === 'summer') return '';                 // not back yet — keep it clean
-    return SUMMER_EVENTS[dateStr] ? SUMMER_EVENTS[dateStr].label : STATUS_LABEL[st];
+    const base = SUMMER_EVENTS[dateStr] ? SUMMER_EVENTS[dateStr].label : STATUS_LABEL[st];
+    return TESTING[dateStr] ? `${base} + ${TESTING[dateStr]}` : base;
   }
   // Students should see a plain "Half Day" on Wellness Wednesdays, not the event name.
   if (pov === 'student' && WELLNESS_WED[dateStr]) return 'Half Day';

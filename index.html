@@ -166,6 +166,18 @@
   .legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.85rem; }
   .legend-item { display: flex; align-items: center; gap: 0.4rem; }
   .swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+  .legend-inline {
+    display: flex;
+    gap: 1rem 1.25rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: #4B5563;
+    padding: 0.6rem 1.25rem;
+    background: #FAFBFC;
+    border-bottom: 1px solid #F0F1F4;
+  }
+  .legend-inline .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-inline .swatch { width: 15px; height: 15px; }
   .quarter {
     background: white;
     border-radius: 8px;
@@ -941,10 +953,18 @@ function renderCalendar() {
   const cal = document.getElementById('calendar');
   cal.innerHTML = '';
 
+  const legendInline = `<div class="legend-inline">
+    <div class="legend-item"><div class="swatch" style="background:#BBDEFB"></div>On campus, full day</div>
+    <div class="legend-item"><div class="swatch" style="background:#FFE699"></div>On campus, half day</div>
+    <div class="legend-item"><div class="swatch" style="background:#FCB98F"></div>Off campus (PD)</div>
+    <div class="legend-item"><div class="swatch" style="background:#D9D9D9"></div>Closed / no school</div>
+    <div class="legend-item"><div class="swatch" style="background:white;box-shadow:inset 0 0 0 2.5px #B5179E"></div>🔒 Restricted (non-negotiable)</div>
+  </div>`;
+
   // ----- Summer section -----
   const sDiv = document.createElement('div');
   sDiv.className = 'quarter summer-section';
-  sDiv.innerHTML = `<div class="quarter-header summer-header"><span class="emoji">☀️</span><span class="script">Summer</span> <span>&nbsp;|&nbsp; ${SUMMER_SECTION.subtitle}</span></div>`;
+  sDiv.innerHTML = `<div class="quarter-header summer-header"><span class="emoji">☀️</span><span class="script">Summer</span> <span>&nbsp;|&nbsp; ${SUMMER_SECTION.subtitle}</span></div>${legendInline}`;
   const sHeader = document.createElement('div');
   sHeader.className = 'week-row header';
   sHeader.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On site</div>';
@@ -965,7 +985,7 @@ function renderCalendar() {
   QUARTERS.forEach(q => {
     const qDiv = document.createElement('div');
     qDiv.className = 'quarter';
-    qDiv.innerHTML = `<div class="quarter-header"><span class="emoji">🗓️</span><span class="script">Quarter</span> <span>${q.num} &nbsp;|&nbsp; ${q.subtitle}</span></div>`;
+    qDiv.innerHTML = `<div class="quarter-header"><span class="emoji">🗓️</span><span class="script">Quarter</span> <span>${q.num} &nbsp;|&nbsp; ${q.subtitle}</span></div>${legendInline}`;
     const headerRow = document.createElement('div');
     headerRow.className = 'week-row header';
     headerRow.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On campus</div>';

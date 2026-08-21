@@ -178,6 +178,40 @@
   }
   .legend-inline .legend-item { display: flex; align-items: center; gap: 0.35rem; }
   .legend-inline .swatch { width: 15px; height: 15px; }
+  .pulse-bar {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .pulse-card {
+    flex: 1 1 260px;
+    background: linear-gradient(135deg, #041E42 0%, #0A2E5C 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 1.1rem 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.95rem;
+    box-shadow: 0 2px 10px rgba(4,30,66,0.18);
+  }
+  .pulse-card.rejuvenate {
+    background: linear-gradient(135deg, #05637A 0%, #00A5E9 100%);
+  }
+  .pulse-icon { font-size: 1.9rem; line-height: 1; flex-shrink: 0; }
+  .pulse-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .pulse-eyebrow {
+    font-size: 0.66rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(255,255,255,0.72);
+  }
+  .pulse-headline { font-size: 1.28rem; font-weight: 800; line-height: 1.15; }
+  .pulse-sub { font-size: 0.82rem; color: rgba(255,255,255,0.85); font-weight: 500; }
+  @media print {
+    .pulse-card { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
   .quarter {
     background: white;
     border-radius: 8px;
@@ -199,6 +233,14 @@
     font-weight: 600;
   }
   .quarter-header .emoji { font-size: 1.2rem; }
+  .quarter-header.collapsible { cursor: pointer; user-select: none; }
+  .collapse-chevron {
+    margin-left: auto;
+    align-self: center;
+    font-size: 1.05rem;
+    transition: transform 0.2s ease;
+  }
+  .quarter-header.collapsed .collapse-chevron { transform: rotate(-90deg); }
   .summer-header {
     background: linear-gradient(135deg, #F5A623 0%, #E8871E 100%) !important;
   }
@@ -394,7 +436,7 @@
   @media print {
     @page { size: portrait; margin: 0.5cm; }
     body { background: white; }
-    .no-print, .pov-bar, #ap-picker, .pov-intro, .header-tools { display: none !important; }
+    .no-print, .pov-bar, .pov-intro, .header-tools { display: none !important; }
     header { background: #1F3864 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .container { padding: 0.5rem; max-width: 100%; }
     .quote-top, .quarter-header, .day, .week-count, .week-row.current-week, .day.today::after, .this-week-tag, .signature, .quote-bottom {
@@ -416,7 +458,7 @@
 <header>
   <div class="header-text">
     <h1>SY27 School Calendar &mdash; Multi-Role View</h1>
-    <p>Switch between roles to see who's on campus each day. Use Per TRUTH Teammate to view one person.</p>
+    <p>Switch between roles to see who's on campus each day.</p>
   </div>
   <div class="header-tools no-print">
     <button class="tool-btn" onclick="jumpToToday()">📍 Jump to Today</button>
@@ -444,15 +486,11 @@
     <button class="pov-btn" data-pov="aps">APS</button>
     <button class="pov-btn" data-pov="dso">DCO</button>
     <button class="pov-btn" data-pov="principal">Principal</button>
-    <button class="pov-btn" data-pov="perap">Per TRUTH Teammate<span class="sub">pick a person</span></button>
-  </div>
-
-  <div id="ap-picker" style="display:none;margin-bottom:1rem;">
-    <label style="font-size:0.85rem;font-weight:600;color:#1F3864;margin-right:0.5rem;">Choose a TRUTH teammate:</label>
-    <select id="ap-select" style="padding:0.5rem 0.75rem;border:2px solid #1F3864;border-radius:6px;font-size:0.95rem;font-weight:600;color:#1F3864;background:white;"></select>
   </div>
 
   <div class="summary" id="summary"></div>
+
+  <div class="pulse-bar" id="pulse"></div>
 
   <div class="legend">
     <div class="legend-item"><div class="swatch" style="background:#BBDEFB"></div>On campus, full day</div>
@@ -488,7 +526,7 @@
 <script>
 const CLOSED_DATES = {
   '2026-09-07': 'Labor Day',
-  '2026-10-12': 'Columbus Day',
+  '2026-10-12': "Indigenous Peoples' Day",
   '2026-11-06': 'No School',
   '2026-11-25': 'Thanksgiving Break',
   '2026-11-26': 'Thanksgiving',
@@ -526,6 +564,7 @@ const PD_DAYS = {
 
 const SL_PD = {
   '2026-09-17': 'SL PD',
+  '2026-10-02': 'PD Day',
   '2026-10-22': 'SL PD',
   '2026-12-03': 'SL PD',
   '2027-01-21': 'SL PD',
@@ -574,12 +613,18 @@ const APS_COHORT = {
 };
 
 const HALF_EXTRA = {
-  '2026-11-03': 'Half Day',
+  '2026-11-03': 'Election Day (half)',
   '2026-11-19': 'Half Day',
   '2026-12-22': 'Half Day',
   '2027-02-25': 'Half Day',
   '2027-04-29': 'Half Day',
   '2027-06-17': 'Diploma Pick Up (half)',
+};
+
+// Dates that are half day on campus for EVERYONE, staff included (not students-only).
+const STAFF_HALF = {
+  '2026-11-03': true,   // Election Day
+  '2026-12-22': true,
 };
 
 const GRADUATION = { '2027-06-16': 'Graduation' };
@@ -696,21 +741,6 @@ const DSO_SUMMIT = {
   '2027-05-25': 'DCO Summit', '2027-05-26': 'DCO Summit',
 };
 
-// Individual APs; cat = the POV category that drives their schedule.
-// April Michelle is treated as an API per request.
-const AP_PEOPLE = [
-  {name: 'April Michelle', role: 'API',  cat: 'api'},
-  {name: 'Darlene',        role: 'API',  cat: 'api'},
-  {name: "De'Ron",         role: 'APS',  cat: 'aps'},
-  {name: 'Hannah',         role: 'API',  cat: 'api'},
-  {name: 'Kaila',          role: 'APC',  cat: 'apc'},
-  {name: 'Nikki',          role: 'API',  cat: 'api'},
-  {name: 'Olay',           role: 'API',  cat: 'api'},
-  {name: 'Pat',            role: 'APC',  cat: 'apc'},
-  {name: 'Tamar',          role: 'DCO',  cat: 'dso'},
-];
-let currentAp = AP_PEOPLE[0].name;
-
 const QUARTERS = [
   {num: 1, name: 'Q1', subtitle: 'August 25 - October 30', start: '2026-08-24', end: '2026-10-30'},
   {num: 2, name: 'Q2', subtitle: 'November 2 - January 29', start: '2026-11-02', end: '2027-01-29'},
@@ -728,27 +758,17 @@ const SUMMER_WEEK_NAMES = {
 
 function effectivePov(pov) {
   if (pov === 'dso') return 'staff';          // DSO follows the staff/adult calendar
-  if (pov === 'perap') {
-    const person = AP_PEOPLE.find(p => p.name === currentAp);
-    if (!person) return 'api';
-    return person.cat === 'dso' ? 'staff' : person.cat;
-  }
   return pov;
 }
 
-// True when the active selection represents the DSO, via either the DSO tab or Per-AP.
+// True when the active selection represents the DSO (via the DSO tab).
 function isDsoView(pov) {
   if (pov === 'dso') return true;
-  if (pov === 'perap') {
-    const person = AP_PEOPLE.find(p => p.name === currentAp);
-    return !!person && person.cat === 'dso';
-  }
   return false;
 }
 
 function getStatus(dateStr, pov) {
   const dsoView = isDsoView(pov);
-  const rawPov = pov;
   pov = effectivePov(pov);
   const date = new Date(dateStr + 'T00:00:00');
   const dow = date.getDay();
@@ -758,10 +778,6 @@ function getStatus(dateStr, pov) {
     // Resolve the role category for summer attendance (DCO must read as 'dso', not 'staff').
     let role = pov;
     if (dsoView) role = 'dso';
-    else if (rawPov === 'perap') {
-      const person = AP_PEOPLE.find(p => p.name === currentAp);
-      if (person) role = person.cat;
-    }
     const evt = SUMMER_EVENTS[dateStr];
     if (!evt) return 'summer';                 // nothing scheduled = not back yet
     if (role === 'student') {
@@ -789,8 +805,12 @@ function getStatus(dateStr, pov) {
   if ((pov === 'api' || pov === 'aps') && API_COHORT[dateStr]) return 'off-pd';
   if (pov === 'apc' && APC_COHORT[dateStr]) return 'off-pd';
   if (pov === 'aps' && APS_COHORT[dateStr]) return 'off-pd';
-  if (SLC[dateStr]) return 'on-half';
+  if (SLC[dateStr]) {
+    if (pov === 'student') return 'on-half';
+    return 'on-full';
+  }
   if (HS_FINALS[dateStr]) return 'on-half';
+  if (STAFF_HALF[dateStr]) return 'on-half';
   if (HALF_EXTRA[dateStr]) {
     if (pov === 'student') return 'on-half';
     return 'on-full';
@@ -905,8 +925,7 @@ const POV_LABEL = {
   'apc': 'APCs',
   'aps': 'APS',
   'principal': 'Principal',
-  'dso': 'DCO',
-  'perap': 'Per TRUTH Teammate'
+  'dso': 'DCO'
 };
 
 let currentPov = 'student';
@@ -932,7 +951,8 @@ function renderWeekRow(week, opts) {
     const dt = new Date(d + 'T00:00:00');
     const restrictedBadge = restricted ? '<div class="restricted-badge" title="Non-negotiable / restricted day">🔒</div>' : '';
     if (isSlc) {
-      dc.innerHTML = `${restrictedBadge}<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">Half day</div>`;
+      const slcDayLabel = status === 'on-half' ? 'Half day' : 'Full day';
+      dc.innerHTML = `${restrictedBadge}<div class="date">${dt.getDate()}</div><div class="slc-tag">SLC</div><div class="lbl">${slcDayLabel}</div>`;
     } else {
       const cellLabel = cellLabelFor(d, currentPov);
       dc.innerHTML = `${restrictedBadge}<div class="date">${dt.getDate()}</div><div class="lbl">${cellLabel}</div>`;
@@ -961,16 +981,21 @@ function renderCalendar() {
     <div class="legend-item"><div class="swatch" style="background:white;box-shadow:inset 0 0 0 2.5px #B5179E"></div>🔒 Restricted (non-negotiable)</div>
   </div>`;
 
-  // ----- Summer section -----
+  // ----- Summer section (collapsible) -----
   const sDiv = document.createElement('div');
   sDiv.className = 'quarter summer-section';
-  sDiv.innerHTML = `<div class="quarter-header summer-header"><span class="emoji">☀️</span><span class="script">Summer</span> <span>&nbsp;|&nbsp; ${SUMMER_SECTION.subtitle}</span></div>${legendInline}`;
+  const summerCollapsed = dateStr(new Date()) >= SCHOOL_START;   // default collapsed once school has started
+  sDiv.innerHTML = `<div class="quarter-header summer-header collapsible${summerCollapsed ? ' collapsed' : ''}" onclick="toggleCollapse(this)"><span class="emoji">☀️</span><span class="script">Summer</span> <span>&nbsp;|&nbsp; ${SUMMER_SECTION.subtitle}</span><span class="collapse-chevron">&#9662;</span></div>`;
+  const sBody = document.createElement('div');
+  sBody.className = 'collapse-body';
+  if (summerCollapsed) sBody.style.display = 'none';
+  sBody.innerHTML = legendInline;
   const sHeader = document.createElement('div');
   sHeader.className = 'week-row header';
   sHeader.innerHTML = '<div>Week</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>On site</div>';
-  sDiv.appendChild(sHeader);
+  sBody.appendChild(sHeader);
   getWeeks(SUMMER_SECTION.start, SUMMER_SECTION.end).forEach(week => {
-    sDiv.appendChild(renderWeekRow(week, {
+    sBody.appendChild(renderWeekRow(week, {
       isSummer: true,
       weekLabelHTML: (wk, cur) => {
         const name = SUMMER_WEEK_NAMES[wk[0]] || '';
@@ -979,6 +1004,7 @@ function renderCalendar() {
       }
     }));
   });
+  sDiv.appendChild(sBody);
   cal.appendChild(sDiv);
 
   // ----- Quarters -----
@@ -1008,8 +1034,14 @@ function jumpToToday() {
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else {
-    alert('Today falls outside the school year shown (Aug 2026 – Jun 2027).');
+    alert('Today falls outside the school year shown (Aug 2026 - Jun 2027).');
   }
+}
+
+function toggleCollapse(headerEl) {
+  headerEl.classList.toggle('collapsed');
+  const body = headerEl.parentElement.querySelector('.collapse-body');
+  if (body) body.style.display = headerEl.classList.contains('collapsed') ? 'none' : '';
 }
 
 function renderSummary() {
@@ -1037,7 +1069,6 @@ function renderSummary() {
   const fw = fullWeeksForPov(currentPov);
 
   let curLabel = POV_LABEL[currentPov];
-  if (currentPov === 'perap') curLabel = currentAp + ' (' + (AP_PEOPLE.find(p=>p.name===currentAp)||{}).role + ')';
 
   s.innerHTML = `
     <h2>${curLabel}: ${fw.full} full weeks on campus &middot; ${onTotal} days (${onPct}% of school year)</h2>
@@ -1074,31 +1105,105 @@ document.getElementById('modal-bg').addEventListener('click', (e) => {
   if (e.target.id === 'modal-bg') closeModal();
 });
 
-// Populate AP dropdown
-const apSelect = document.getElementById('ap-select');
-AP_PEOPLE.forEach(p => {
-  const opt = document.createElement('option');
-  opt.value = p.name;
-  opt.textContent = `${p.name} — ${p.role}`;
-  apSelect.appendChild(opt);
-});
-apSelect.addEventListener('change', () => {
-  currentAp = apSelect.value;
-  renderSummary();
-  renderCalendar();
-});
-
 document.querySelectorAll('.pov-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.pov-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentPov = btn.dataset.pov;
-    document.getElementById('ap-picker').style.display = (currentPov === 'perap') ? 'block' : 'none';
     renderSummary();
     renderCalendar();
   });
 });
 
+function fmtLong(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function renderPulse() {
+  const el = document.getElementById('pulse');
+  if (!el) return;
+  const MS = 86400000;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = dateStr(today);
+  const schoolStart = new Date(SCHOOL_START + 'T00:00:00');
+  const yearEnd = new Date('2027-06-18T00:00:00');   // last day off on the calendar
+
+  // In-session days = weekdays from the first day of school through the target, minus holidays/breaks.
+  function inSessionDaysThrough(target) {
+    let count = 0;
+    const d = new Date(schoolStart);
+    while (d <= target) {
+      const iso = dateStr(d);
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6 && !CLOSED_DATES[iso]) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  }
+
+  // ----- Card 1: progress, positively framed -----
+  let progressHTML;
+  if (today < schoolStart) {
+    const n = Math.round((schoolStart - today) / MS);
+    progressHTML = `
+      <div class="pulse-icon">🌱</div>
+      <div class="pulse-text">
+        <div class="pulse-eyebrow">The build begins</div>
+        <div class="pulse-headline">Day 1 in ${n} ${n === 1 ? 'day' : 'days'}</div>
+        <div class="pulse-sub">First day of school &middot; ${fmtLong(schoolStart)}</div>
+      </div>`;
+  } else if (today > yearEnd) {
+    const total = inSessionDaysThrough(yearEnd);
+    progressHTML = `
+      <div class="pulse-icon">🌳</div>
+      <div class="pulse-text">
+        <div class="pulse-eyebrow">Rooted in excellence</div>
+        <div class="pulse-headline">${total} days, well built</div>
+        <div class="pulse-sub">A full year, rooted and grown</div>
+      </div>`;
+  } else {
+    const dayNum = inSessionDaysThrough(today);
+    progressHTML = `
+      <div class="pulse-icon">🌳</div>
+      <div class="pulse-text">
+        <div class="pulse-eyebrow">Rooted in excellence</div>
+        <div class="pulse-headline">Day ${dayNum}, rooted in excellence</div>
+        <div class="pulse-sub">School days in session, and building</div>
+      </div>`;
+  }
+
+  // ----- Card 2: next rejuvenation day (days off + Wellness Wednesdays) -----
+  const rejuvDates = {};
+  Object.keys(WELLNESS_WED).forEach(d => { rejuvDates[d] = WELLNESS_WED[d]; });
+  Object.keys(CLOSED_DATES).forEach(d => { rejuvDates[d] = CLOSED_DATES[d]; });   // a full day off outranks a half day
+  const upcoming = Object.keys(rejuvDates).filter(d => d > todayStr).sort();
+  let rejuvHTML;
+  if (upcoming.length) {
+    const next = upcoming[0];
+    const nextDate = new Date(next + 'T00:00:00');
+    const n = Math.round((nextDate - today) / MS);
+    const away = n === 1 ? 'tomorrow' : `in ${n} days`;
+    rejuvHTML = `
+      <div class="pulse-icon">🔋</div>
+      <div class="pulse-text">
+        <div class="pulse-eyebrow">Next rejuvenation day</div>
+        <div class="pulse-headline">${rejuvDates[next]}, ${away}</div>
+        <div class="pulse-sub">${fmtLong(nextDate)} &middot; Rooted in Excellence, Built on Belonging</div>
+      </div>`;
+  } else {
+    rejuvHTML = `
+      <div class="pulse-icon">🔋</div>
+      <div class="pulse-text">
+        <div class="pulse-eyebrow">Next rejuvenation day</div>
+        <div class="pulse-headline">Summer, you earned it</div>
+        <div class="pulse-sub">Rest well &middot; Rooted in Excellence, Built on Belonging</div>
+      </div>`;
+  }
+
+  el.innerHTML = `<div class="pulse-card">${progressHTML}</div><div class="pulse-card rejuvenate">${rejuvHTML}</div>`;
+}
+
+renderPulse();
 renderSummary();
 renderCalendar();
 </script>
